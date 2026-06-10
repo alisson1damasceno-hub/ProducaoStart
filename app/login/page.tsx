@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Mail } from "lucide-react";
 import { entrar, esqueceuSenha, sessaoAtual } from "./authApi";
+import { supabase } from "../../lib/supabase";
 
 type Modo = "entrar" | "esqueceu";
 
@@ -39,7 +40,19 @@ export default function LoginPage() {
     try {
       if (modo === "entrar") {
         await entrar({ email, senha });
-        router.replace("/");
+
+        // Verifica se o usuário já aceitou os termos
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: termos } = await supabase
+            .from("termos_aceitos")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          window.location.href = termos ? "/" : "/termos";
+        } else {
+          router.replace("/");
+        }
       } else {
         await esqueceuSenha(email);
         setSucesso("Se esse e-mail estiver cadastrado, você receberá um link em instantes.");
