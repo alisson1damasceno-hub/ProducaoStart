@@ -1,5 +1,5 @@
 import { supabase } from "../../lib/supabase";
-import type { Credenciais, NovoUsuario, Sessao } from "./types";
+import type { Credenciais, NovoUsuario, Sessao, Avatar } from "./types";
 
 function toSessao(user: any, session: any): Sessao {
   return {
@@ -7,6 +7,12 @@ function toSessao(user: any, session: any): Sessao {
       id: user.id,
       nome: user.user_metadata?.nome ?? user.email ?? "Usuário",
       email: user.email ?? "",
+      papel: user.user_metadata?.papel ?? "operario",
+      avatar: user.user_metadata?.avatar ?? {
+        pele: "tom2",
+        roupa: "verde",
+        cabelo: "nenhum",
+      },
     },
     token: session.access_token,
     expiraEm: session.expires_at
@@ -76,6 +82,16 @@ export async function sessaoAtual(): Promise<Sessao | null> {
 export async function atualizarSenha(novaSenha: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({
     password: novaSenha,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function atualizarPerfil(dados: {
+  nome?: string;
+  avatar?: Avatar;
+}): Promise<void> {
+  const { error } = await supabase.auth.updateUser({
+    data: dados,
   });
   if (error) throw new Error(error.message);
 }
