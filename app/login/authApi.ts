@@ -54,7 +54,7 @@ export async function registrar(novo: NovoUsuario): Promise<Sessao> {
 
 export async function esqueceuSenha(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}/login`,
+    redirectTo: `${window.location.origin}/reset-password`,
   });
   if (error) throw new Error(error.message);
 }
@@ -71,4 +71,11 @@ export async function sessaoAtual(): Promise<Sessao | null> {
   } catch {
     return null;
   }
+}
+
+export async function atualizarSenha(novaSenha: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({
+    password: novaSenha,
+  });
+  if (error) throw new Error(error.message);
 }
