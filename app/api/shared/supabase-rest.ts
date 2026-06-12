@@ -41,6 +41,7 @@ type DbProductionOrder = {
   stage: ProductionOrder["stage"];
   progress: number;
   created_at: string;
+  comments?: ProductionOrder["comments"] | null;
 };
 
 function assertConfig() {
@@ -56,6 +57,7 @@ function endpoint(table: string, query = "") {
 
 function headers(extra?: HeadersInit) {
   assertConfig();
+
   return {
     apikey: supabaseRestKey as string,
     Authorization: `Bearer ${supabaseRestKey as string}`,
@@ -71,8 +73,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: headers(init?.headers),
-    cache: "no-store",
-    signal: controller.signal
+                               cache: "no-store",
+                               signal: controller.signal
   }).finally(() => clearTimeout(timeout));
 
   if (!response.ok) {
@@ -81,6 +83,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (response.status === 204) return undefined as T;
+
   return response.json() as Promise<T>;
 }
 
@@ -121,9 +124,11 @@ function toDbProductPatch(product: Partial<Product>) {
 
 export function toSheet(row: DbTechnicalSheet): TechnicalSheet {
   const seedSheet = seedData.sheets.find((sheet) => sheet.id === row.id || sheet.code === row.code);
-  const rawMaterials = Array.isArray(row.raw_materials) && row.raw_materials.length
-    ? row.raw_materials
-    : seedSheet?.rawMaterials || [];
+
+  const rawMaterials =
+  Array.isArray(row.raw_materials) && row.raw_materials.length
+  ? row.raw_materials
+  : seedSheet?.rawMaterials || [];
 
   return {
     id: row.id,
@@ -183,7 +188,8 @@ export function toOrder(row: DbProductionOrder): ProductionOrder {
     lot: row.lot,
     stage: row.stage,
     progress: row.progress,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    comments: Array.isArray(row.comments) ? row.comments : []
   };
 }
 
@@ -199,7 +205,8 @@ export function toDbOrder(order: ProductionOrder): DbProductionOrder {
     lot: order.lot,
     stage: order.stage,
     progress: order.progress,
-    created_at: order.createdAt
+    created_at: order.createdAt,
+    comments: Array.isArray(order.comments) ? order.comments : []
   };
 }
 
@@ -214,15 +221,16 @@ function toDbOrderPatch(order: Partial<ProductionOrder>) {
     ...(order.lot !== undefined ? { lot: order.lot } : {}),
     ...(order.stage !== undefined ? { stage: order.stage } : {}),
     ...(order.progress !== undefined ? { progress: order.progress } : {}),
-    ...(order.createdAt !== undefined ? { created_at: order.createdAt } : {})
+    ...(order.createdAt !== undefined ? { created_at: order.createdAt } : {}),
+    ...(order.comments !== undefined ? { comments: order.comments } : {})
   };
 }
 
 export async function getMvpData(): Promise<MvpData> {
   const [products, sheets, orders] = await Promise.all([
     request<DbProduct[]>(endpoint("products", "?select=*&order=created_at.desc")),
-    request<DbTechnicalSheet[]>(endpoint("technical_sheets", "?select=*&order=created_at.desc")),
-    request<DbProductionOrder[]>(endpoint("production_orders", "?select=*&order=created_at.desc"))
+                                                       request<DbTechnicalSheet[]>(endpoint("technical_sheets", "?select=*&order=created_at.desc")),
+                                                       request<DbProductionOrder[]>(endpoint("production_orders", "?select=*&order=created_at.desc"))
   ]);
 
   return {
@@ -238,6 +246,7 @@ export async function insertProduct(product: Product) {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(toDbProduct(product))
   });
+
   return toProduct(rows[0]);
 }
 
@@ -247,6 +256,7 @@ export async function updateProduct(id: string, product: Partial<Product>) {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(toDbProductPatch(product))
   });
+
   return toProduct(rows[0]);
 }
 
@@ -263,6 +273,7 @@ export async function insertSheet(sheet: TechnicalSheet) {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(toDbSheet(sheet))
   });
+
   return toSheet(rows[0]);
 }
 
@@ -272,6 +283,7 @@ export async function updateSheet(id: string, sheet: Partial<TechnicalSheet>) {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(toDbSheetPatch(sheet))
   });
+
   return toSheet(rows[0]);
 }
 
@@ -288,6 +300,7 @@ export async function insertOrder(order: ProductionOrder) {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(toDbOrder(order))
   });
+
   return toOrder(rows[0]);
 }
 
@@ -301,6 +314,7 @@ export async function updateOrder(id: string, order: Partial<ProductionOrder>) {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(toDbOrderPatch(order))
   });
+
   return toOrder(rows[0]);
 }
 
@@ -338,7 +352,14 @@ export async function resetMvpData() {
   await request(endpoint("production_orders"), {
     method: "POST",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(seedData.orders.map(toDbOrder))
+    body: JSON.stringify(
+      seedData.orders.map((order) =>
+      toDbOrder({
+        ...order,
+        comments: Array.isArray(order.comments) ? order.comments : []
+      })
+      )
+    )
   });
 
   return getMvpData();
