@@ -18,7 +18,8 @@ export const seedData: MvpData = {
       category: "Poliframe",
       line: "Linha 01",
       recycledPercent: 68,
-      status: "Ativo"
+      status: "Ativo",
+      publications: []
     },
     {
       id: "prod-2",
@@ -27,7 +28,8 @@ export const seedData: MvpData = {
       category: "Reparô",
       line: "Envase",
       recycledPercent: 40,
-      status: "Ativo"
+      status: "Ativo",
+      publications: []
     }
   ],
   sheets: [
@@ -46,6 +48,7 @@ export const seedData: MvpData = {
         { id: "mp-pol-uv", name: "Aditivo UV", quantity: 0.03, unit: "kg", unitCost: 32 },
         { id: "mp-pol-embalagem", name: "Embalagem unitária", quantity: 1, unit: "un", unitCost: 0.88 }
       ],
+      publications: [],
       steps: "Triagem, moagem, mistura, prensagem, resfriamento, inspeção",
       status: "Aprovada"
     },
@@ -64,6 +67,7 @@ export const seedData: MvpData = {
         { id: "mp-rep-tampa", name: "Tampa", quantity: 1, unit: "un", unitCost: 0.18 },
         { id: "mp-rep-rotulo", name: "Rótulo", quantity: 1, unit: "un", unitCost: 0.08 }
       ],
+      publications: [],
       steps: "Pesagem, moagem, formulação, envase, rotulagem",
       status: "Aprovada"
     }

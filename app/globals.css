@@ -486,6 +486,91 @@ tbody tr:hover td { background: #fbfcfd; }
 .material-line span { color: #263640; font-size: 12px; font-weight: 800; text-transform: none; }
 .material-line strong { color: #173f2a; font-size: 12px; text-align: right; }
 
+.publications-editor-head { margin-bottom: 8px; }
+.publications-editor-head label { margin-bottom: 0; }
+
+.publications-upload-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr auto;
+}
+
+.publications-upload-btn {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.publications-error {
+  color: #c62828;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.publications-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.publications-item {
+  align-items: center;
+  background: #f6faf8;
+  border: 1px solid #dcebe2;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 48px 1fr auto;
+  padding: 8px 10px;
+}
+
+.publications-item img {
+  border-radius: 6px;
+  height: 48px;
+  object-fit: cover;
+  width: 48px;
+}
+
+.publications-item span {
+  color: #263640;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.publications-empty {
+  align-items: center;
+  color: #657586;
+  display: flex;
+  font-size: 12px;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.publications-gallery {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  margin-top: 6px;
+}
+
+.publications-gallery-item img {
+  border-radius: 8px;
+  display: block;
+  height: 96px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.publications-gallery-item figcaption {
+  color: #607080;
+  font-size: 11px;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.publications-card-indicator { margin: 0 0 13px; }
+
 .materials-consumption {
   background: #fbfcfd;
   border: 1px solid #dfe8ee;
@@ -771,4 +856,6 @@ tbody tr:hover td { background: #fbfcfd; }
   .ops-item-status { align-items: flex-start; }
   .material-editor-head { align-items: stretch; flex-direction: column; }
   .consumption-row { grid-template-columns: 1fr; }
+  .publications-upload-row { grid-template-columns: 1fr; }
+  .publications-item { grid-template-columns: 40px 1fr auto; }
 }

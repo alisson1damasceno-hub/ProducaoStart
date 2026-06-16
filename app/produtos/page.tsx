@@ -2,8 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Eye, Leaf, PackagePlus, Pencil, Save, Tags, Trash2, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, Eye, Image, Leaf, PackagePlus, Pencil, Save, Tags, Trash2, X } from "lucide-react";
 import { Shell } from "../shared/shell";
+import { PublicationsEditor, PublicationsGallery } from "../shared/publications";
 import { useMvpData } from "../shared/store";
 import type { Product } from "../shared/types";
 
@@ -15,7 +16,8 @@ const emptyForm: ProductForm = {
   category: "Poliframe",
   line: "Linha 01",
   recycledPercent: 60,
-  status: "Ativo"
+  status: "Ativo",
+  publications: []
 };
 
 export default function ProductsPage() {
@@ -58,7 +60,8 @@ export default function ProductsPage() {
       category: product.category,
       line: product.line,
       recycledPercent: product.recycledPercent,
-      status: product.status
+      status: product.status,
+      publications: product.publications
     });
   }
 
@@ -157,6 +160,11 @@ export default function ProductsPage() {
             </select>
           </div>
 
+          <PublicationsEditor
+            publications={form.publications}
+            onChange={(next) => setForm({ ...form, publications: next })}
+          />
+
           <div className="form-actions">
             <button className="btn btn-primary" type="submit">
               {editingId ? <Save size={17} /> : <PackagePlus size={17} />} {editingId ? "Salvar edição" : "Salvar produto"}
@@ -183,6 +191,10 @@ export default function ProductsPage() {
                 <span className="eyebrow">Visualização</span>
                 <h3>{viewing.name}</h3>
                 <p>SKU {viewing.sku} · {viewing.category} · {viewing.line}</p>
+                <div className="sheet-detail">
+                  <span>Publicações</span>
+                  <PublicationsGallery publications={viewing.publications} />
+                </div>
               </div>
               <div className="detail-panel-actions">
                 <button className="icon-btn" type="button" onClick={() => startEdit(viewing)} title="Editar produto"><Pencil size={16} /></button>
@@ -228,6 +240,11 @@ export default function ProductsPage() {
                         {productSheets.length ? "Ficha vinculada" : "Sem ficha"}
                       </span>
                     </div>
+                    {product.publications.length > 0 && (
+                      <div className="product-card-meta publications-card-indicator">
+                        <span><Image size={12} /> {product.publications.length} publicação(ões)</span>
+                      </div>
+                    )}
                     <div className="crud-actions">
                       <button className="icon-btn" type="button" onClick={() => setViewing(product)} title="Visualizar produto"><Eye size={16} /></button>
                       <button className="icon-btn" type="button" onClick={() => startEdit(product)} title="Editar produto"><Pencil size={16} /></button>

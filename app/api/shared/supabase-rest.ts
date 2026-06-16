@@ -1,4 +1,4 @@
-import type { MvpData, Product, ProductionOrder, RawMaterial, TechnicalSheet } from "../../shared/types";
+import type { MvpData, Product, ProductionOrder, Publication, RawMaterial, TechnicalSheet } from "../../shared/types";
 import { seedData } from "../../shared/seed";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -13,6 +13,7 @@ type DbProduct = {
   line: string;
   recycled_percent: number;
   status: Product["status"];
+  publications?: Publication[] | null;
 };
 
 type DbTechnicalSheet = {
@@ -25,6 +26,7 @@ type DbTechnicalSheet = {
   residue: string;
   inputs: string;
   raw_materials?: RawMaterial[] | null;
+  publications?: Publication[] | null;
   steps: string;
   status: TechnicalSheet["status"];
 };
@@ -95,7 +97,8 @@ export function toProduct(row: DbProduct): Product {
     category: row.category,
     line: row.line,
     recycledPercent: row.recycled_percent,
-    status: row.status
+    status: row.status,
+    publications: Array.isArray(row.publications) ? row.publications : []
   };
 }
 
@@ -107,7 +110,8 @@ export function toDbProduct(product: Product): DbProduct {
     category: product.category,
     line: product.line,
     recycled_percent: product.recycledPercent,
-    status: product.status
+    status: product.status,
+    publications: product.publications || []
   };
 }
 
@@ -118,7 +122,8 @@ function toDbProductPatch(product: Partial<Product>) {
     ...(product.category !== undefined ? { category: product.category } : {}),
     ...(product.line !== undefined ? { line: product.line } : {}),
     ...(product.recycledPercent !== undefined ? { recycled_percent: product.recycledPercent } : {}),
-    ...(product.status !== undefined ? { status: product.status } : {})
+    ...(product.status !== undefined ? { status: product.status } : {}),
+    ...(product.publications !== undefined ? { publications: product.publications } : {})
   };
 }
 
@@ -140,6 +145,7 @@ export function toSheet(row: DbTechnicalSheet): TechnicalSheet {
     residue: row.residue,
     inputs: row.inputs,
     rawMaterials,
+    publications: Array.isArray(row.publications) ? row.publications : [],
     steps: row.steps,
     status: row.status
   };
@@ -156,6 +162,7 @@ export function toDbSheet(sheet: TechnicalSheet): DbTechnicalSheet {
     residue: sheet.residue,
     inputs: sheet.inputs,
     raw_materials: sheet.rawMaterials,
+    publications: sheet.publications || [],
     steps: sheet.steps,
     status: sheet.status
   };
@@ -171,6 +178,7 @@ function toDbSheetPatch(sheet: Partial<TechnicalSheet>) {
     ...(sheet.residue !== undefined ? { residue: sheet.residue } : {}),
     ...(sheet.inputs !== undefined ? { inputs: sheet.inputs } : {}),
     ...(sheet.rawMaterials !== undefined ? { raw_materials: sheet.rawMaterials } : {}),
+    ...(sheet.publications !== undefined ? { publications: sheet.publications } : {}),
     ...(sheet.steps !== undefined ? { steps: sheet.steps } : {}),
     ...(sheet.status !== undefined ? { status: sheet.status } : {})
   };

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Shell } from "../shared/shell";
 import { cleanRawMaterials, materialLineCost, materialSummary, materialsFromLegacyInputs, sheetMaterialCost } from "../shared/materials";
+import { PublicationsEditor, PublicationsGallery } from "../shared/publications";
 import { useMvpData } from "../shared/store";
 import type { RawMaterial, TechnicalSheet } from "../shared/types";
 
@@ -48,6 +49,7 @@ const defaultForm: SheetForm = {
   residue: "1 kg/un",
   inputs: "",
   rawMaterials: [createMaterial()],
+  publications: [],
   steps: "",
   status: "Aprovada"
 };
@@ -136,6 +138,7 @@ export default function TechnicalSheetsPage() {
       residue: sheet.residue,
       inputs: sheet.inputs,
       rawMaterials: rawMaterials.length ? rawMaterials : [createMaterial()],
+      publications: sheet.publications,
       steps: sheet.steps,
       status: sheet.status
     });
@@ -291,6 +294,11 @@ export default function TechnicalSheetsPage() {
             </div>
           </div>
 
+          <PublicationsEditor
+            publications={form.publications}
+            onChange={(next) => setForm({ ...form, publications: next })}
+          />
+
           <div className="form-group">
             <label className="required">Etapas</label>
             <textarea value={form.steps} onChange={(e) => setForm({ ...form, steps: e.target.value })} placeholder="Ex: Triagem, moagem, mistura, inspeção" />
@@ -322,6 +330,10 @@ export default function TechnicalSheetsPage() {
                 <span className="eyebrow">Visualização</span>
                 <h3>{viewing.code} · {productName(viewing.productId)}</h3>
                 <p>v{viewing.version} · {viewing.cycleMinutes} min · {currency.format(sheetMaterialCost(viewing))}/un em MP</p>
+                <div className="sheet-detail">
+                  <span>Publicações</span>
+                  <PublicationsGallery publications={viewing.publications} />
+                </div>
               </div>
               <div className="detail-panel-actions">
                 <button className="icon-btn" type="button" onClick={() => startEdit(viewing)} title="Editar ficha"><Pencil size={16} /></button>
@@ -359,6 +371,12 @@ export default function TechnicalSheetsPage() {
                       <span>Etapas</span>
                       <p>{sheet.steps}</p>
                     </div>
+                    {sheet.publications.length > 0 && (
+                      <div className="sheet-detail">
+                        <span>Publicações</span>
+                        <PublicationsGallery publications={sheet.publications} />
+                      </div>
+                    )}
                     <div className="crud-actions">
                       <button className="icon-btn" type="button" onClick={() => setViewing(sheet)} title="Visualizar ficha"><Eye size={16} /></button>
                       <button className="icon-btn" type="button" onClick={() => startEdit(sheet)} title="Editar ficha"><Pencil size={16} /></button>
