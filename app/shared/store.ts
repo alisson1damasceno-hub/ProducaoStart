@@ -96,7 +96,10 @@ function loadData(): MvpData {
 
 function normalizeData(data: MvpData): MvpData {
   return {
-    products: data.products || [],
+    products: (data.products || []).map((product) => ({
+      ...product,
+      publications: Array.isArray(product.publications) ? product.publications : []
+    })),
     sheets: (data.sheets || []).map((sheet) => {
       const seedSheet = seedData.sheets.find(
         (item) => item.id === sheet.id || item.code === sheet.code
@@ -107,7 +110,8 @@ function normalizeData(data: MvpData): MvpData {
         rawMaterials:
         Array.isArray(sheet.rawMaterials) && sheet.rawMaterials.length
         ? sheet.rawMaterials
-        : seedSheet?.rawMaterials || []
+        : seedSheet?.rawMaterials || [],
+        publications: Array.isArray(sheet.publications) ? sheet.publications : []
       };
     }),
     orders: (data.orders || []).map((order) => ({

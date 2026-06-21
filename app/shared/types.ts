@@ -6,6 +6,7 @@ export type Product = {
   line: string;
   recycledPercent: number;
   status: "Ativo" | "Em desenvolvimento";
+  publications: Publication[];
 };
 
 export type RawMaterial = {
@@ -14,6 +15,13 @@ export type RawMaterial = {
   quantity: number;
   unit: string;
   unitCost: number;
+};
+
+export type Publication = {
+  id: string;
+  imageUrl: string;
+  caption: string;
+  createdAt: string;
 };
 
 export type TechnicalSheet = {
@@ -26,6 +34,7 @@ export type TechnicalSheet = {
   residue: string;
   inputs: string;
   rawMaterials: RawMaterial[];
+  publications: Publication[];
   steps: string;
   status: "Aprovada" | "Em revisão";
 };
