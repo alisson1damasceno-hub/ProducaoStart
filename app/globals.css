@@ -859,6 +859,7 @@ tbody tr:hover td { background: #fbfcfd; }
   .publications-upload-row { grid-template-columns: 1fr; }
   .publications-item { grid-template-columns: 40px 1fr auto; }
 }
+<<<<<<< HEAD
 
 .export-group {
   display: flex;
@@ -1014,3 +1015,5 @@ tbody tr:hover td { background: #fbfcfd; }
   border-color: #16a34a !important;
   color: #fff !important;
 }
+=======
+>>>>>>> 94a6216de9bdab1ac4369c8ec321961cc33f9a8b
