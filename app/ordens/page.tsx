@@ -506,8 +506,8 @@ export default function OrdersPage() {
                     </td>
                     <td>
                       <div className="row-actions">
-                        <button className="icon-btn" type="button" onClick={() => setViewing(order)} title="Visualizar OP e histórico">
-                          <Eye size={16} />
+                        <button className="icon-btn" type="button" onClick={() => setViewing(order)} title="Comentários da OP">
+                          <MessageSquare size={16} />
                         </button>
                         <button className="icon-btn" type="button" onClick={() => startEdit(order)} title="Editar OP">
                           <Pencil size={16} />
