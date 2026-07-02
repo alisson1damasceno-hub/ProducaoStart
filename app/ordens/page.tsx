@@ -7,7 +7,6 @@ import {
   Clock3,
   Coins,
   Download,
-  Eye,
   MessageSquare,
   Package,
   Pencil,
@@ -364,8 +363,9 @@ export default function OrdersPage() {
                   <button className="icon-btn danger" type="button" onClick={() => confirmDelete(viewingOrder)} title="Excluir OP">
                     <Trash2 size={16} />
                   </button>
-                  <button className="icon-btn" type="button" onClick={() => setViewing(null)} title="Fechar">
-                    <X size={16} />
+                  <button className="icon-btn" type="button" onClick={() => setViewing(null)} title="Comentário da OP"
+                  >
+                  <MessageSquare size={16} />
                   </button>
                 </div>
               </div>
