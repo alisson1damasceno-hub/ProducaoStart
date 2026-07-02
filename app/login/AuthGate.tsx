@@ -12,7 +12,7 @@ import type { Papel } from "./types";
 
 function Carregando() {
   return (
-    <div style={{ padding: "40px 0", textAlign: "center", color: "#a1a1aa" }}>
+    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-muted)" }}>
       Carregando…
     </div>
   );
@@ -97,7 +97,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, padding: "6px 16px", fontSize: 13, color: "#52525b", borderBottom: "1px solid #e4e4e7", background: "#fafafa" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, padding: "6px 16px", fontSize: 13, color: "var(--text-muted)", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
         <AvatarPreview pele={sessao.usuario.avatar.pele} roupa={sessao.usuario.avatar.roupa} size={28} />
       <span>
         Logado como <strong>{sessao.usuario.nome}</strong>

@@ -371,9 +371,9 @@ export default function OrdersPage() {
               </div>
 
               <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, padding: 14, borderRadius: 16, border: "1px solid var(--border)", background: "linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.52))" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, padding: 14, borderRadius: 16, border: "1px solid var(--border)", background: "var(--surface)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 14, display: "grid", placeItems: "center", background: "#ffffff", border: "1px solid var(--border)", boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)" }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 14, display: "grid", placeItems: "center", background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)" }}>
                       <MessageSquare size={18} />
                     </div>
                     <div>
@@ -388,7 +388,7 @@ export default function OrdersPage() {
 
                 <form
                   onSubmit={submitComment}
-                  style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14, border: "1px solid var(--border)", borderRadius: 16, background: "#ffffff", boxShadow: "0 10px 28px rgba(15, 23, 42, 0.07)" }}
+                  style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14, border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface)", boxShadow: "0 10px 28px rgba(15, 23, 42, 0.07)" }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -445,14 +445,14 @@ export default function OrdersPage() {
                         style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 10, position: "relative", paddingBottom: index === viewingComments.length - 1 ? 0 : 14 }}
                       >
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 999, display: "grid", placeItems: "center", border: "1px solid var(--border)", background: "#ffffff", zIndex: 1 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 999, display: "grid", placeItems: "center", border: "1px solid var(--border)", background: "var(--surface)", zIndex: 1 }}>
                             <MessageSquare size={14} />
                           </div>
                           {index !== viewingComments.length - 1 && (
                             <div style={{ width: 1, flex: 1, background: "var(--border)", marginTop: 6 }} />
                           )}
                         </div>
-                        <div style={{ padding: 13, border: "1px solid var(--border)", borderRadius: 15, background: "#ffffff", boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)" }}>
+                        <div style={{ padding: 13, border: "1px solid var(--border)", borderRadius: 15, background: "var(--surface)", boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 7, alignItems: "center" }}>
                             <strong style={{ fontSize: 13 }}>{comment.author}</strong>
                             <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>

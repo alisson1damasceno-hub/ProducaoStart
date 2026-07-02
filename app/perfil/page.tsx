@@ -122,7 +122,7 @@ export default function PerfilPage() {
                   height: 32,
                   borderRadius: "50%",
                   background: CORES_HEX[tom],
-                  border: pele === tom ? "3px solid #14532d" : "2px solid #e4e4e7",
+                  border: pele === tom ? "3px solid var(--brand)" : "2px solid var(--border-input)",
                   cursor: "pointer",
                 }}
               />
@@ -144,7 +144,7 @@ export default function PerfilPage() {
                   height: 32,
                   borderRadius: "50%",
                   background: CORES_HEX[cor],
-                  border: roupa === cor ? "3px solid #14532d" : "2px solid #e4e4e7",
+                  border: roupa === cor ? "3px solid var(--brand)" : "2px solid var(--border-input)",
                   cursor: "pointer",
                 }}
               />

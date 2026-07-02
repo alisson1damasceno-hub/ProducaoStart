@@ -26,7 +26,7 @@ export default function TermosPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f4f4f5", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px" }}>
       <div style={{ width: "100%", maxWidth: 720, display: "flex", flexDirection: "column", gap: 20 }}>
 
         <div className="top">
@@ -38,10 +38,10 @@ export default function TermosPage() {
         {/* Termos de Uso */}
         <div className="card">
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <FileText size={20} color="#14532d" />
+            <FileText size={20} color="var(--brand)" />
             <h2 style={{ fontSize: 17, fontWeight: 700 }}>Termos de Uso</h2>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "#3f3f46", lineHeight: 1.7 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "var(--text-body-2)", lineHeight: 1.7 }}>
             <p>
               Bem-vindo ao <strong>Sistema de Controle de Produção — Produção Start</strong>, desenvolvido pela equipe do Setor de Produção como parte do projeto integrador do curso. Ao acessar ou utilizar esta plataforma, você declara ter lido, compreendido e concordado integralmente com os presentes Termos de Uso.
             </p>
@@ -107,10 +107,10 @@ export default function TermosPage() {
         {/* Política de Privacidade */}
         <div className="card">
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <ShieldCheck size={20} color="#14532d" />
+            <ShieldCheck size={20} color="var(--brand)" />
             <h2 style={{ fontSize: 17, fontWeight: 700 }}>Política de Privacidade</h2>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "#3f3f46", lineHeight: 1.7 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, fontSize: 14, color: "var(--text-body-2)", lineHeight: 1.7 }}>
             <p>
               Esta Política de Privacidade descreve como o <strong>Sistema Produção Start</strong> coleta, utiliza, armazena e protege os dados pessoais dos seus Usuários, em conformidade com a <strong>Lei nº 13.709/2018 — Lei Geral de Proteção de Dados Pessoais (LGPD)</strong> e com o <strong>Marco Civil da Internet (Lei nº 12.965/2014)</strong>.
             </p>
@@ -184,12 +184,12 @@ export default function TermosPage() {
 
         {/* Confirmação */}
         <div className="card">
-          <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer", fontSize: 14, color: "#3f3f46", lineHeight: 1.6 }}>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer", fontSize: 14, color: "var(--text-body-2)", lineHeight: 1.6 }}>
             <input
               type="checkbox"
               checked={aceitou}
               onChange={(e) => setAceitou(e.target.checked)}
-              style={{ marginTop: 3, width: 16, height: 16, cursor: "pointer", accentColor: "#14532d" }}
+              style={{ marginTop: 3, width: 16, height: 16, cursor: "pointer", accentColor: "var(--brand)" }}
             />
             <span>
               Declaro que li e compreendi integralmente os <strong>Termos de Uso</strong> e a <strong>Política de Privacidade</strong> do Sistema Produção Start, e manifesto meu <strong>consentimento livre, informado e inequívoco</strong> para o tratamento dos meus dados pessoais conforme descrito, nos termos do Art. 5º, inciso XII da LGPD.

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BarChart3, ClipboardList, Factory, KanbanSquare, ListChecks, Package } from "lucide-react";
 import { useMvpData } from "./store";
 import { supabase } from "../lib/supabaseClient";
+import { ThemeToggle } from "./ThemeToggle";
 
 const nav = [
   { href: "/", key: "dashboard", label: "Dashboard", icon: BarChart3 },
@@ -38,27 +39,30 @@ export function Shell({ active, children }: { active: string; children: React.Re
             );
           })}
         </div>
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            localStorage.clear();
-            sessionStorage.clear();
-            window.location.href = "/login";
-          }}
-          style={{
-            background: "#dc2626",
-            border: "none",
-            color: "white",
-            padding: "6px 16px",
-            borderRadius: 6,
-            cursor: "pointer",
-            fontSize: 13,
-            fontWeight: 600,
-            boxShadow: "0 2px 6px rgba(220,38,38,0.3)"
-          }}
-        >
-          Sair
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ThemeToggle />
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              localStorage.clear();
+              sessionStorage.clear();
+              window.location.href = "/login";
+            }}
+            style={{
+              background: "#dc2626",
+              border: "none",
+              color: "white",
+              padding: "6px 16px",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600,
+              boxShadow: "0 2px 6px rgba(220,38,38,0.3)"
+            }}
+          >
+            Sair
+          </button>
+        </div>
       </nav>
 
       <div className={`system-status ${backendReady ? "online" : "offline"}`}>

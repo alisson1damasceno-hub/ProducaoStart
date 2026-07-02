@@ -65,17 +65,17 @@ export default function LoginPage() {
   }
 
   if (verificando) return (
-    <div style={{ padding: "40px 0", textAlign: "center", color: "#a1a1aa" }}>
+    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-muted)" }}>
       Carregando…
     </div>
   );
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "#f4f4f5" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "var(--bg)" }}>
       <div className="card" style={{ width: "100%", maxWidth: 400 }}>
         <div className="section-title">
           <div>
-            <h3 style={{ color: "#0f3460" }}>ProducaoStart</h3>
+            <h3 style={{ color: "var(--heading)" }}>ProducaoStart</h3>
             <p>
               {modo === "entrar" && "Entre para acessar o sistema."}
               {modo === "esqueceu" && "Informe seu e-mail para recuperar o acesso."}
@@ -98,7 +98,7 @@ export default function LoginPage() {
 
           {modo === "entrar" && (
             <button type="button" onClick={() => trocarModo("esqueceu")}
-              style={{ background: "none", border: "none", color: "#0f3460", fontSize: 13, cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline" }}>
+              style={{ background: "none", border: "none", color: "var(--heading)", fontSize: 13, cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline" }}>
               Esqueci minha senha
             </button>
           )}
@@ -106,16 +106,16 @@ export default function LoginPage() {
           {erro && <div className="badge badge-orange" style={{ alignSelf: "flex-start" }}>{erro}</div>}
           {sucesso && <div className="badge badge-green" style={{ alignSelf: "flex-start" }}>{sucesso}</div>}
 
-          <button className="btn btn-primary" type="submit" disabled={enviando} style={{ background: "#0f3460" }}>
+          <button className="btn btn-primary" type="submit" disabled={enviando} style={{ background: "var(--brand)" }}>
             {modo === "entrar" && <><LogIn size={16} /> {enviando ? "Entrando…" : "Entrar"}</>}
             {modo === "esqueceu" && <><Mail size={16} /> {enviando ? "Enviando…" : "Enviar link"}</>}
           </button>
         </form>
 
         {modo === "esqueceu" && (
-          <p style={{ marginTop: 16, fontSize: 13, color: "#71717a" }}>
+          <p style={{ marginTop: 16, fontSize: 13, color: "var(--text-muted)" }}>
             <button type="button" onClick={() => trocarModo("entrar")}
-              style={{ background: "none", border: "none", color: "#0f3460", fontWeight: 700, cursor: "pointer", padding: 0 }}>
+              style={{ background: "none", border: "none", color: "var(--heading)", fontWeight: 700, cursor: "pointer", padding: 0 }}>
               Voltar para o login
             </button>
           </p>

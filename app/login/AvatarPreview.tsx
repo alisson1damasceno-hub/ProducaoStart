@@ -28,7 +28,7 @@ export function AvatarPreview({ pele, roupa, size = 40 }: AvatarPreviewProps) {
       height={size}
       style={{ borderRadius: "50%", flexShrink: 0 }}
     >
-      <rect width="100" height="100" fill="#e9f3ed" />
+      <rect width="100" height="100" style={{ fill: "var(--surface-tint-2)" }} />
       <path d="M10 100 A40 40 0 0 1 90 100 Z" fill={CORES_ROUPA[roupa]} />
       <circle cx="50" cy="42" r="26" fill={CORES_PELE[pele]} />
     </svg>
