@@ -22,6 +22,7 @@ import { Shell } from "../shared/shell";
 import { cleanRawMaterials, materialLineCost, materialSummary, materialsFromLegacyInputs, sheetMaterialCost } from "../shared/materials";
 import { PublicationsEditor, PublicationsGallery } from "../shared/publications";
 import { useMvpData } from "../shared/store";
+import { usePapel } from "../login/usePapel";
 import type { RawMaterial, TechnicalSheet } from "../shared/types";
 
 const currency = new Intl.NumberFormat("pt-BR", {
@@ -56,6 +57,7 @@ const defaultForm: SheetForm = {
 
 export default function TechnicalSheetsPage() {
   const { products, sheets, orders, addSheet, updateSheet, deleteSheet } = useMvpData();
+  const { podeEditar, podeExcluir } = usePapel();
   const [form, setForm] = useState<SheetForm>(defaultForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<TechnicalSheet | null>(null);
@@ -209,6 +211,7 @@ export default function TechnicalSheetsPage() {
       </div>
 
       <div className="workbench-grid">
+        {podeEditar ? (
         <form className="card form-panel" onSubmit={submit}>
           <div className="section-title">
             <div>
@@ -315,6 +318,13 @@ export default function TechnicalSheetsPage() {
             )}
           </div>
         </form>
+        ) : (
+          <div className="card form-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#71717a", textAlign: "center" }}>
+            <span style={{ fontSize: 32 }}>🔒</span>
+            <strong>Acesso restrito</strong>
+            <p className="subtitle">Somente Admin e Owner podem criar ou editar fichas técnicas.</p>
+          </div>
+        )}
 
         <div className="card">
           <div className="section-title">
@@ -336,8 +346,8 @@ export default function TechnicalSheetsPage() {
                 </div>
               </div>
               <div className="detail-panel-actions">
-                <button className="icon-btn" type="button" onClick={() => startEdit(viewing)} title="Editar ficha"><Pencil size={16} /></button>
-                <button className="icon-btn danger" type="button" onClick={() => confirmDelete(viewing)} title="Excluir ficha"><Trash2 size={16} /></button>
+                {podeEditar && <button className="icon-btn" type="button" onClick={() => startEdit(viewing)} title="Editar ficha"><Pencil size={16} /></button>}
+                {podeExcluir && <button className="icon-btn danger" type="button" onClick={() => confirmDelete(viewing)} title="Excluir ficha"><Trash2 size={16} /></button>}
                 <button className="icon-btn" type="button" onClick={() => setViewing(null)} title="Fechar"><X size={16} /></button>
               </div>
             </div>
@@ -379,8 +389,8 @@ export default function TechnicalSheetsPage() {
                     )}
                     <div className="crud-actions">
                       <button className="icon-btn" type="button" onClick={() => setViewing(sheet)} title="Visualizar ficha"><Eye size={16} /></button>
-                      <button className="icon-btn" type="button" onClick={() => startEdit(sheet)} title="Editar ficha"><Pencil size={16} /></button>
-                      <button className="icon-btn danger" type="button" onClick={() => confirmDelete(sheet)} title="Excluir ficha"><Trash2 size={16} /></button>
+                      {podeEditar && <button className="icon-btn" type="button" onClick={() => startEdit(sheet)} title="Editar ficha"><Pencil size={16} /></button>}
+                      {podeExcluir && <button className="icon-btn danger" type="button" onClick={() => confirmDelete(sheet)} title="Excluir ficha"><Trash2 size={16} /></button>}
                     </div>
                   </article>
                 );
