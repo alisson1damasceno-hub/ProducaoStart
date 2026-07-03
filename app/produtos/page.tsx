@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, Eye, Image, Leaf, PackagePlus, Pencil, Save, 
 import { Shell } from "../shared/shell";
 import { PublicationsEditor, PublicationsGallery } from "../shared/publications";
 import { useMvpData } from "../shared/store";
+import { usePapel } from "../login/usePapel";
 import type { Product } from "../shared/types";
 
 type ProductForm = Omit<Product, "id">;
@@ -22,6 +23,7 @@ const emptyForm: ProductForm = {
 
 export default function ProductsPage() {
   const { products, sheets, orders, addProduct, updateProduct, deleteProduct } = useMvpData();
+  const { podeEditar, podeExcluir } = usePapel();
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Product | null>(null);
@@ -112,6 +114,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="workbench-grid">
+        {podeEditar ? (
         <form className="card form-panel" onSubmit={submit}>
           <div className="section-title">
             <div>
@@ -176,6 +179,13 @@ export default function ProductsPage() {
             )}
           </div>
         </form>
+        ) : (
+          <div className="card form-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#71717a", textAlign: "center" }}>
+            <span style={{ fontSize: 32 }}>🔒</span>
+            <strong>Acesso restrito</strong>
+            <p className="subtitle">Somente Admin e Owner podem criar ou editar produtos.</p>
+          </div>
+        )}
 
         <div className="card">
           <div className="section-title">
@@ -197,8 +207,8 @@ export default function ProductsPage() {
                 </div>
               </div>
               <div className="detail-panel-actions">
-                <button className="icon-btn" type="button" onClick={() => startEdit(viewing)} title="Editar produto"><Pencil size={16} /></button>
-                <button className="icon-btn danger" type="button" onClick={() => confirmDelete(viewing)} title="Excluir produto"><Trash2 size={16} /></button>
+                {podeEditar && <button className="icon-btn" type="button" onClick={() => startEdit(viewing)} title="Editar produto"><Pencil size={16} /></button>}
+                {podeExcluir && <button className="icon-btn danger" type="button" onClick={() => confirmDelete(viewing)} title="Excluir produto"><Trash2 size={16} /></button>}
                 <button className="icon-btn" type="button" onClick={() => setViewing(null)} title="Fechar"><X size={16} /></button>
               </div>
             </div>
@@ -247,8 +257,8 @@ export default function ProductsPage() {
                     )}
                     <div className="crud-actions">
                       <button className="icon-btn" type="button" onClick={() => setViewing(product)} title="Visualizar produto"><Eye size={16} /></button>
-                      <button className="icon-btn" type="button" onClick={() => startEdit(product)} title="Editar produto"><Pencil size={16} /></button>
-                      <button className="icon-btn danger" type="button" onClick={() => confirmDelete(product)} title="Excluir produto"><Trash2 size={16} /></button>
+                      {podeEditar && <button className="icon-btn" type="button" onClick={() => startEdit(product)} title="Editar produto"><Pencil size={16} /></button>}
+                      {podeExcluir && <button className="icon-btn danger" type="button" onClick={() => confirmDelete(product)} title="Excluir produto"><Trash2 size={16} /></button>}
                     </div>
                   </article>
                 );
