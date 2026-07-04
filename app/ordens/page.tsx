@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Shell } from "../shared/shell";
 import { useMvpData } from "../shared/store";
+import { usePapel } from "../login/usePapel";
 import { stageLabels } from "../shared/seed";
 import { orderMaterialConsumption, sheetMaterialCost } from "../shared/materials";
 import { exportOrdersCSV, exportOrdersJSON } from "../shared/exportUtils";
@@ -50,6 +51,7 @@ const defaultForm: OrderForm = {
 
 export default function OrdersPage() {
   const { products, sheets, orders, addOrder, updateOrder, deleteOrder, addComment } = useMvpData();
+  const { podeEditar, podeExcluir } = usePapel();
 
   const [form, setForm] = useState<OrderForm>(defaultForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -199,6 +201,7 @@ export default function OrdersPage() {
       {showShare && <ShareModal onClose={() => setShowShare(false)} />}
 
       <div className="workbench-grid">
+        {podeEditar ? (
         <form className="card form-panel" onSubmit={submit}>
           <div className="section-title">
             <div>
@@ -336,6 +339,13 @@ export default function OrdersPage() {
             )}
           </div>
         </form>
+        ) : (
+          <div className="card form-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#71717a", textAlign: "center" }}>
+            <span style={{ fontSize: 32 }}>🔒</span>
+            <strong>Acesso restrito</strong>
+            <p className="subtitle">Somente Admin e Owner podem criar ou editar ordens.</p>
+          </div>
+        )}
 
         <div className="card table-card">
           <div className="section-title">
@@ -357,12 +367,8 @@ export default function OrdersPage() {
                   </p>
                 </div>
                 <div className="detail-panel-actions">
-                  <button className="icon-btn" type="button" onClick={() => startEdit(viewingOrder)} title="Editar OP">
-                    <Pencil size={16} />
-                  </button>
-                  <button className="icon-btn danger" type="button" onClick={() => confirmDelete(viewingOrder)} title="Excluir OP">
-                    <Trash2 size={16} />
-                  </button>
+                  {podeEditar && <button className="icon-btn" type="button" onClick={() => startEdit(viewingOrder)} title="Editar OP"><Pencil size={16} /></button>}
+                  {podeExcluir && <button className="icon-btn danger" type="button" onClick={() => confirmDelete(viewingOrder)} title="Excluir OP"><Trash2 size={16} /></button>}
                   <button className="icon-btn" type="button" onClick={() => setViewing(null)} title="Comentário da OP"
                   >
                   <MessageSquare size={16} />
@@ -509,12 +515,8 @@ export default function OrdersPage() {
                         <button className="icon-btn" type="button" onClick={() => setViewing(order)} title="Comentários da OP">
                           <MessageSquare size={16} />
                         </button>
-                        <button className="icon-btn" type="button" onClick={() => startEdit(order)} title="Editar OP">
-                          <Pencil size={16} />
-                        </button>
-                        <button className="icon-btn danger" type="button" onClick={() => confirmDelete(order)} title="Excluir OP">
-                          <Trash2 size={16} />
-                        </button>
+                        {podeEditar && <button className="icon-btn" type="button" onClick={() => startEdit(order)} title="Editar OP"><Pencil size={16} /></button>}
+                        {podeExcluir && <button className="icon-btn danger" type="button" onClick={() => confirmDelete(order)} title="Excluir OP"><Trash2 size={16} /></button>}
                       </div>
                     </td>
                   </tr>
