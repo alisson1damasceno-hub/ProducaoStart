@@ -249,16 +249,23 @@ export default function Home() {
     .map((priority) => ({ priority, count: reportFiltered.filter((o) => o.priority === priority).length }))
     .filter((item) => item.count > 0);
   const chartPriorityTotal = Math.max(1, chartPriorityData.reduce((sum, item) => sum + item.count, 0));
-  const priorityPieGradient = (() => {
+
+  function donutSegments(items: { value: number; color: string }[], radius: number) {
+    const circumference = 2 * Math.PI * radius;
+    const total = Math.max(1, items.reduce((sum, item) => sum + item.value, 0));
     let acc = 0;
-    const stops = chartPriorityData.map((item) => {
-      const start = (acc / chartPriorityTotal) * 360;
-      acc += item.count;
-      const end = (acc / chartPriorityTotal) * 360;
-      return `${priorityColors[item.priority]} ${start}deg ${end}deg`;
+    return items.map((item) => {
+      const length = (item.value / total) * circumference;
+      const segment = { color: item.color, dasharray: `${length} ${circumference - length}`, dashoffset: -acc };
+      acc += length;
+      return segment;
     });
-    return stops.length ? `conic-gradient(${stops.join(", ")})` : "var(--surface)";
-  })();
+  }
+
+  const priorityDonut = donutSegments(
+    chartPriorityData.map((item) => ({ value: item.count, color: priorityColors[item.priority] })),
+    40
+  );
 
   // Gráfico de linha: OPs concluídas por semana, últimas 8 semanas
   const weeklyCompletionData = useMemo(() => {
@@ -283,13 +290,29 @@ export default function Home() {
     return weeks;
   }, [completedOrders]);
   const maxWeeklyCount = Math.max(1, ...weeklyCompletionData.map((w) => w.count));
-  const linePoints = weeklyCompletionData
-    .map((w, index) => {
-      const x = (index / (weeklyCompletionData.length - 1)) * 280 + 10;
-      const y = 90 - (w.count / maxWeeklyCount) * 80;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const weeklyPoints = weeklyCompletionData.map((w, index) => ({
+    x: (index / (weeklyCompletionData.length - 1)) * 280 + 10,
+    y: 78 - (w.count / maxWeeklyCount) * 62
+  }));
+  function smoothPath(points: { x: number; y: number }[]) {
+    if (!points.length) return "";
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i];
+      const p1 = points[i + 1];
+      const midX = (p0.x + p1.x) / 2;
+      d += ` C ${midX} ${p0.y}, ${midX} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+    return d;
+  }
+  const weeklyLinePath = smoothPath(weeklyPoints);
+  const weeklyAreaPath = weeklyPoints.length
+    ? `${weeklyLinePath} L ${weeklyPoints[weeklyPoints.length - 1].x} 84 L ${weeklyPoints[0].x} 84 Z`
+    : "";
+  const weeklyPeakIndex = weeklyCompletionData.reduce(
+    (best, w, index) => (w.count > weeklyCompletionData[best].count ? index : best),
+    0
+  );
 
   // Gráfico de produtos: com ficha técnica x sem ficha técnica
   function productHasSheet(product: Product) {
@@ -299,7 +322,13 @@ export default function Home() {
   const productChartBase = productChartFilter === "todos" ? products : products.filter((p) => p.status === productChartFilter);
   const productsWithSheet = productChartBase.filter(productHasSheet).length;
   const productsWithoutSheet = productChartBase.length - productsWithSheet;
-  const maxProductChart = Math.max(1, productsWithSheet, productsWithoutSheet);
+  const productDonut = donutSegments(
+    [
+      { value: productsWithSheet, color: "#22c55e" },
+      { value: productsWithoutSheet, color: "#ef4444" }
+    ],
+    40
+  );
 
   return (
     <Shell active="dashboard">
@@ -313,26 +342,30 @@ export default function Home() {
         </Link>
       </div>
 
-      <div className="kpi-row compact">
-        <div className="kpi">
-          <div className="kpi-icon"><PackagePlus size={18} /></div>
-          <div className="kpi-label">Produtos ativos</div>
-          <div className="kpi-value">{products.filter((product) => product.status === "Ativo").length}</div>
+      <div className="kpi-hero-row">
+        <div className="kpi-hero" style={{ background: "linear-gradient(135deg, #0f9b6c 0%, #34d399 100%)" }}>
+          <div className="kpi-hero-label">Produtos ativos</div>
+          <div className="kpi-hero-value">{products.filter((product) => product.status === "Ativo").length}</div>
+          <div className="kpi-hero-icon"><PackagePlus size={20} /></div>
         </div>
-        <div className="kpi">
-          <div className="kpi-icon"><ClipboardList size={18} /></div>
-          <div className="kpi-label">Fichas aprovadas</div>
-          <div className="kpi-value">{approvedSheets.length}</div>
+        <div className="kpi-hero" style={{ background: "linear-gradient(135deg, #4338ca 0%, #3b82f6 100%)" }}>
+          <div className="kpi-hero-label">Fichas aprovadas</div>
+          <div className="kpi-hero-value">{approvedSheets.length}</div>
+          <div className="kpi-hero-icon"><ClipboardList size={20} /></div>
         </div>
-        <div className="kpi">
-          <div className="kpi-icon"><Activity size={18} /></div>
-          <div className="kpi-label">OPs em aberto</div>
-          <div className="kpi-value">{activeOrders.length}</div>
+        <div className="kpi-compact">
+          <div className="kpi-compact-icon" style={{ background: "#ef444422", color: "#ef4444" }}><Activity size={17} /></div>
+          <div>
+            <div className="kpi-compact-value">{activeOrders.length}</div>
+            <div className="kpi-compact-label">OPs em aberto</div>
+          </div>
         </div>
-        <div className="kpi">
-          <div className="kpi-icon"><Gauge size={18} /></div>
-          <div className="kpi-label">Avanço médio</div>
-          <div className="kpi-value">{averageProgress}%</div>
+        <div className="kpi-compact">
+          <div className="kpi-compact-icon" style={{ background: "#f59e0b22", color: "#f59e0b" }}><Gauge size={17} /></div>
+          <div>
+            <div className="kpi-compact-value">{averageProgress}%</div>
+            <div className="kpi-compact-label">Avanço médio</div>
+          </div>
         </div>
       </div>
 
@@ -470,47 +503,101 @@ export default function Home() {
         </div>
 
         {reportFiltered.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.3fr", gap: 16, marginBottom: 20 }}>
             <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
               <strong style={{ fontSize: 13 }}>OPs por etapa</strong>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-                {chartStageData.map((item) => (
-                  <div key={item.stage} style={{ display: "grid", gridTemplateColumns: "90px 1fr 30px", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{item.label}</span>
-                    <div style={{ background: "var(--border)", borderRadius: 6, height: 10, overflow: "hidden" }}>
-                      <div style={{ width: `${(item.count / maxChartStageCount) * 100}%`, height: "100%", background: "var(--accent, #3b82f6)", borderRadius: 6 }} />
+              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6, height: 120, marginTop: 16 }}>
+                {chartStageData.map((item, index) => {
+                  const hue = 150 + index * 25;
+                  return (
+                    <div key={item.stage} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{item.count}</span>
+                      <div
+                        style={{
+                          width: "100%",
+                          maxWidth: 26,
+                          height: `${Math.max(6, (item.count / maxChartStageCount) * 84)}px`,
+                          borderRadius: "8px 8px 3px 3px",
+                          background: `linear-gradient(180deg, hsl(${hue} 80% 62%) 0%, hsl(${hue} 75% 42%) 100%)`
+                        }}
+                      />
+                      <span style={{ fontSize: 9.5, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.2 }}>{item.label}</span>
                     </div>
-                    <span style={{ fontSize: 11, textAlign: "right" }}>{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <strong style={{ fontSize: 13, alignSelf: "flex-start" }}>OPs por prioridade</strong>
-              <div style={{ width: 90, height: 90, borderRadius: "50%", background: priorityPieGradient }} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-                {chartPriorityData.map((item) => (
-                  <div key={item.priority} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ width: 9, height: 9, borderRadius: "50%", background: priorityColors[item.priority], display: "inline-block" }} />
-                      {item.priority}
-                    </span>
-                    <span>{item.count}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+              <strong style={{ fontSize: 13 }}>OPs por prioridade</strong>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
+                <div style={{ position: "relative", width: 100, height: 100, flexShrink: 0 }}>
+                  <svg viewBox="0 0 100 100" width="100" height="100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" strokeWidth="14" />
+                    {priorityDonut.map((seg, index) => (
+                      <circle
+                        key={index}
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke={seg.color}
+                        strokeWidth="14"
+                        strokeDasharray={seg.dasharray}
+                        strokeDashoffset={seg.dashoffset}
+                        strokeLinecap="round"
+                        transform="rotate(-90 50 50)"
+                      />
+                    ))}
+                  </svg>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <strong style={{ fontSize: 18, lineHeight: 1 }}>{chartPriorityTotal}</strong>
+                    <span style={{ fontSize: 9, color: "var(--text-muted)" }}>OPs</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                  {chartPriorityData.map((item) => (
+                    <div key={item.priority} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ width: 9, height: 9, borderRadius: "50%", background: priorityColors[item.priority], display: "inline-block" }} />
+                        {item.priority}
+                      </span>
+                      <span style={{ fontWeight: 700 }}>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)", position: "relative" }}>
               <strong style={{ fontSize: 13 }}>OPs concluídas (últimas 8 semanas)</strong>
-              <svg viewBox="0 0 300 100" width="100%" height="100" style={{ marginTop: 8 }}>
-                <polyline points={linePoints} fill="none" stroke="var(--accent, #3b82f6)" strokeWidth="2" />
-                {weeklyCompletionData.map((w, index) => {
-                  const x = (index / (weeklyCompletionData.length - 1)) * 280 + 10;
-                  const y = 90 - (w.count / maxWeeklyCount) * 80;
-                  return <circle key={w.start} cx={x} cy={y} r="2.5" fill="var(--accent, #3b82f6)" />;
-                })}
+              <svg viewBox="0 0 300 90" width="100%" height="100" style={{ marginTop: 8, overflow: "visible" }}>
+                <defs>
+                  <linearGradient id="weeklyAreaFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--accent, #3b82f6)" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="var(--accent, #3b82f6)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {[0, 1, 2, 3].map((line) => (
+                  <line key={line} x1="10" x2="290" y1={20 + line * 18} y2={20 + line * 18} stroke="var(--border)" strokeWidth="1" strokeDasharray="3 4" />
+                ))}
+                <path d={weeklyAreaPath} fill="url(#weeklyAreaFill)" stroke="none" />
+                <path d={weeklyLinePath} fill="none" stroke="var(--accent, #3b82f6)" strokeWidth="2.5" />
+                {weeklyPoints.map((p, index) => (
+                  <circle key={weeklyCompletionData[index].start} cx={p.x} cy={p.y} r={index === weeklyPeakIndex ? 3.5 : 2.5} fill="var(--accent, #3b82f6)" />
+                ))}
+                {weeklyCompletionData[weeklyPeakIndex]?.count > 0 && (
+                  <text
+                    x={weeklyPoints[weeklyPeakIndex]?.x}
+                    y={(weeklyPoints[weeklyPeakIndex]?.y ?? 0) - 8}
+                    textAnchor="middle"
+                    fontSize="9"
+                    fontWeight="700"
+                    fill="var(--text)"
+                  >
+                    Máx: {weeklyCompletionData[weeklyPeakIndex]?.count}
+                  </text>
+                )}
               </svg>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text-muted)" }}>
                 <span>{weeklyCompletionData[0]?.label}</span>
@@ -590,20 +677,46 @@ export default function Home() {
             <option value="Em desenvolvimento">Somente em desenvolvimento</option>
           </select>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 40px", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Com ficha técnica</span>
-            <div style={{ background: "var(--border)", borderRadius: 6, height: 12, overflow: "hidden" }}>
-              <div style={{ width: `${(productsWithSheet / maxProductChart) * 100}%`, height: "100%", background: "#22c55e", borderRadius: 6 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ position: "relative", width: 100, height: 100, flexShrink: 0 }}>
+            <svg viewBox="0 0 100 100" width="100" height="100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" strokeWidth="14" />
+              {productDonut.map((seg, index) => (
+                <circle
+                  key={index}
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="none"
+                  stroke={seg.color}
+                  strokeWidth="14"
+                  strokeDasharray={seg.dasharray}
+                  strokeDashoffset={seg.dashoffset}
+                  strokeLinecap="round"
+                  transform="rotate(-90 50 50)"
+                />
+              ))}
+            </svg>
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <strong style={{ fontSize: 18, lineHeight: 1 }}>{productChartBase.length}</strong>
+              <span style={{ fontSize: 9, color: "var(--text-muted)" }}>produtos</span>
             </div>
-            <span style={{ fontSize: 12, textAlign: "right" }}>{productsWithSheet}</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 40px", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Sem ficha técnica</span>
-            <div style={{ background: "var(--border)", borderRadius: 6, height: 12, overflow: "hidden" }}>
-              <div style={{ width: `${(productsWithoutSheet / maxProductChart) * 100}%`, height: "100%", background: "#ef4444", borderRadius: 6 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 360, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+                Com ficha técnica
+              </span>
+              <strong>{productsWithSheet}</strong>
             </div>
-            <span style={{ fontSize: 12, textAlign: "right" }}>{productsWithoutSheet}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
+                Sem ficha técnica
+              </span>
+              <strong>{productsWithoutSheet}</strong>
+            </div>
           </div>
         </div>
       </section>
