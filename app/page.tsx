@@ -1,21 +1,27 @@
 "use client";
 
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  ArrowUpDown,
   CheckCircle2,
   ClipboardList,
   Factory,
   Gauge,
   Layers,
   PackageCheck,
-  PackagePlus
+  PackagePlus,
+  Search,
+  SlidersHorizontal,
+  X
 } from "lucide-react";
 import { Shell } from "./shared/shell";
 import { useMvpData } from "./shared/store";
-import type { ProductionOrder, ProductionStage } from "./shared/types";
+import { sheetMaterialCost } from "./shared/materials";
+import type { Product, ProductionOrder, ProductionStage } from "./shared/types";
 
 const stageLabels: Record<ProductionStage, string> = {
   recepcao: "Recepção",
@@ -29,6 +35,11 @@ const stageLabels: Record<ProductionStage, string> = {
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(new Date(`${value}T00:00:00`));
 }
+
+const currency = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL"
+});
 
 function stageClass(stage: ProductionStage) {
   if (stage === "concluido") return "badge-green";
@@ -56,6 +67,239 @@ export default function Home() {
     count: orders.filter((order) => order.stage === stage).length
   }));
   const maxStageCount = Math.max(1, ...stageSummary.map((item) => item.count));
+
+  // ---------- Relatório de OPs: filtro, pesquisa, ordenação, agrupamento, totais e gráficos ----------
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  function productNameForOrder(order: ProductionOrder) {
+    const sheet = sheets.find((item) => item.id === order.sheetId);
+    const product = products.find((item) => item.id === sheet?.productId);
+    return product?.name || "Produto não encontrado";
+  }
+
+  function orderCost(order: ProductionOrder) {
+    const sheet = sheets.find((item) => item.id === order.sheetId);
+    return sheet ? sheetMaterialCost(sheet) * order.quantity : 0;
+  }
+
+  function isOverdue(order: ProductionOrder) {
+    return order.stage !== "concluido" && order.dueDate < todayIso;
+  }
+
+  const [reportSearch, setReportSearch] = useState("");
+  const [reportStatus, setReportStatus] = useState<"todas" | "abertas" | "concluidas" | "atrasadas">("todas");
+  const [reportPriority, setReportPriority] = useState<ProductionOrder["priority"] | "todas">("todas");
+  const [reportResponsible, setReportResponsible] = useState("todos");
+  const [reportFrom, setReportFrom] = useState("");
+  const [reportTo, setReportTo] = useState("");
+  const [reportGroup, setReportGroup] = useState(false);
+  const [reportSortKey, setReportSortKey] = useState<"code" | "product" | "quantity" | "cost" | "priority" | "stage">("code");
+  const [reportSortDir, setReportSortDir] = useState<"asc" | "desc">("asc");
+
+  const reportResponsibleOptions = useMemo(
+    () => Array.from(new Set(orders.map((order) => order.responsible))).sort(),
+    [orders]
+  );
+
+  function applyPreset(preset: "semana" | "semana-passada" | "30dias" | "tudo") {
+    const now = new Date();
+    if (preset === "tudo") {
+      setReportFrom("");
+      setReportTo("");
+      return;
+    }
+    if (preset === "30dias") {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 30);
+      setReportFrom(start.toISOString().slice(0, 10));
+      setReportTo(todayIso);
+      return;
+    }
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const startOfThisWeek = new Date(now);
+    startOfThisWeek.setDate(now.getDate() - mondayOffset);
+
+    if (preset === "semana") {
+      setReportFrom(startOfThisWeek.toISOString().slice(0, 10));
+      setReportTo(todayIso);
+      return;
+    }
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
+    const endOfLastWeek = new Date(startOfThisWeek);
+    endOfLastWeek.setDate(startOfThisWeek.getDate() - 1);
+    setReportFrom(startOfLastWeek.toISOString().slice(0, 10));
+    setReportTo(endOfLastWeek.toISOString().slice(0, 10));
+  }
+
+  function toggleReportSort(key: typeof reportSortKey) {
+    if (reportSortKey === key) {
+      setReportSortDir((current) => (current === "asc" ? "desc" : "asc"));
+    } else {
+      setReportSortKey(key);
+      setReportSortDir("asc");
+    }
+  }
+
+  function clearReportFilters() {
+    setReportSearch("");
+    setReportStatus("todas");
+    setReportPriority("todas");
+    setReportResponsible("todos");
+    setReportFrom("");
+    setReportTo("");
+  }
+
+  const reportFiltersActive =
+    reportSearch.trim() !== "" ||
+    reportStatus !== "todas" ||
+    reportPriority !== "todas" ||
+    reportResponsible !== "todos" ||
+    reportFrom !== "" ||
+    reportTo !== "";
+
+  const reportFiltered = useMemo(() => {
+    const term = reportSearch.trim().toLowerCase();
+
+    return orders.filter((order) => {
+      if (reportStatus === "abertas" && order.stage === "concluido") return false;
+      if (reportStatus === "concluidas" && order.stage !== "concluido") return false;
+      if (reportStatus === "atrasadas" && !isOverdue(order)) return false;
+      if (reportPriority !== "todas" && order.priority !== reportPriority) return false;
+      if (reportResponsible !== "todos" && order.responsible !== reportResponsible) return false;
+      if (reportFrom && order.dueDate < reportFrom) return false;
+      if (reportTo && order.dueDate > reportTo) return false;
+
+      if (term) {
+        const haystack = `${order.code} ${productNameForOrder(order)} ${order.responsible} ${order.lot}`.toLowerCase();
+        if (!haystack.includes(term)) return false;
+      }
+      return true;
+    });
+  }, [orders, sheets, products, reportSearch, reportStatus, reportPriority, reportResponsible, reportFrom, reportTo, todayIso]);
+
+  const reportSorted = useMemo(() => {
+    const dir = reportSortDir === "asc" ? 1 : -1;
+    return [...reportFiltered].sort((a, b) => {
+      switch (reportSortKey) {
+        case "product":
+          return productNameForOrder(a).localeCompare(productNameForOrder(b)) * dir;
+        case "quantity":
+          return (a.quantity - b.quantity) * dir;
+        case "cost":
+          return (orderCost(a) - orderCost(b)) * dir;
+        case "priority":
+          return a.priority.localeCompare(b.priority) * dir;
+        case "stage":
+          return stageLabels[a.stage].localeCompare(stageLabels[b.stage]) * dir;
+        case "code":
+        default:
+          return a.code.localeCompare(b.code) * dir;
+      }
+    });
+  }, [reportFiltered, reportSortKey, reportSortDir]);
+
+  const reportGrouped = useMemo(() => {
+    if (!reportGroup) return null;
+    const groups = new Map<ProductionStage, ProductionOrder[]>();
+    reportSorted.forEach((order) => {
+      const list = groups.get(order.stage) || [];
+      list.push(order);
+      groups.set(order.stage, list);
+    });
+    return groups;
+  }, [reportGroup, reportSorted]);
+
+  const reportTotals = useMemo(() => {
+    const totalQuantity = reportFiltered.reduce((sum, order) => sum + order.quantity, 0);
+    const totalCost = reportFiltered.reduce((sum, order) => sum + orderCost(order), 0);
+    const avgProgress = reportFiltered.length
+      ? reportFiltered.reduce((sum, order) => sum + order.progress, 0) / reportFiltered.length
+      : 0;
+    return { totalQuantity, totalCost, avgProgress, count: reportFiltered.length };
+  }, [reportFiltered, sheets]);
+
+  function sortIcon(key: typeof reportSortKey) {
+    return (
+      <button
+        type="button"
+        onClick={() => toggleReportSort(key)}
+        style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", font: "inherit", color: "inherit", padding: 0 }}
+        title="Ordenar"
+      >
+        <ArrowUpDown size={12} style={{ opacity: reportSortKey === key ? 1 : 0.4 }} />
+      </button>
+    );
+  }
+
+  // Gráfico de barras: OPs por etapa (respeitando o filtro do relatório)
+  const chartStageData = (Object.keys(stageLabels) as ProductionStage[])
+    .map((stage) => ({ stage, label: stageLabels[stage], count: reportFiltered.filter((o) => o.stage === stage).length }))
+    .filter((item) => item.count > 0);
+  const maxChartStageCount = Math.max(1, ...chartStageData.map((item) => item.count));
+
+  // Gráfico de pizza: OPs por prioridade (respeitando o filtro do relatório)
+  const priorityColors: Record<ProductionOrder["priority"], string> = {
+    Alta: "#ef4444",
+    Média: "#f59e0b",
+    Baixa: "#22c55e"
+  };
+  const chartPriorityData = (["Alta", "Média", "Baixa"] as ProductionOrder["priority"][])
+    .map((priority) => ({ priority, count: reportFiltered.filter((o) => o.priority === priority).length }))
+    .filter((item) => item.count > 0);
+  const chartPriorityTotal = Math.max(1, chartPriorityData.reduce((sum, item) => sum + item.count, 0));
+  const priorityPieGradient = (() => {
+    let acc = 0;
+    const stops = chartPriorityData.map((item) => {
+      const start = (acc / chartPriorityTotal) * 360;
+      acc += item.count;
+      const end = (acc / chartPriorityTotal) * 360;
+      return `${priorityColors[item.priority]} ${start}deg ${end}deg`;
+    });
+    return stops.length ? `conic-gradient(${stops.join(", ")})` : "var(--surface)";
+  })();
+
+  // Gráfico de linha: OPs concluídas por semana, últimas 8 semanas
+  const weeklyCompletionData = useMemo(() => {
+    const weeks: { label: string; start: string; end: string; count: number }[] = [];
+    const now = new Date();
+    for (let i = 7; i >= 0; i--) {
+      const end = new Date(now);
+      end.setDate(now.getDate() - i * 7);
+      const start = new Date(end);
+      start.setDate(end.getDate() - 6);
+      weeks.push({
+        label: `${start.getDate()}/${start.getMonth() + 1}`,
+        start: start.toISOString().slice(0, 10),
+        end: end.toISOString().slice(0, 10),
+        count: 0
+      });
+    }
+    completedOrders.forEach((order) => {
+      const week = weeks.find((w) => order.dueDate >= w.start && order.dueDate <= w.end);
+      if (week) week.count += 1;
+    });
+    return weeks;
+  }, [completedOrders]);
+  const maxWeeklyCount = Math.max(1, ...weeklyCompletionData.map((w) => w.count));
+  const linePoints = weeklyCompletionData
+    .map((w, index) => {
+      const x = (index / (weeklyCompletionData.length - 1)) * 280 + 10;
+      const y = 90 - (w.count / maxWeeklyCount) * 80;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  // Gráfico de produtos: com ficha técnica x sem ficha técnica
+  function productHasSheet(product: Product) {
+    return sheets.some((sheet) => sheet.productId === product.id);
+  }
+  const [productChartFilter, setProductChartFilter] = useState<"todos" | "Ativo" | "Em desenvolvimento">("todos");
+  const productChartBase = productChartFilter === "todos" ? products : products.filter((p) => p.status === productChartFilter);
+  const productsWithSheet = productChartBase.filter(productHasSheet).length;
+  const productsWithoutSheet = productChartBase.length - productsWithSheet;
+  const maxProductChart = Math.max(1, productsWithSheet, productsWithoutSheet);
 
   return (
     <Shell active="dashboard">
@@ -146,6 +390,223 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      <section className="card table-card">
+        <div className="section-title">
+          <div>
+            <h3>Relatório de Ordens de Produção</h3>
+            <p>Filtre, pesquise, ordene e visualize os dados consolidados de todas as OPs.</p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            alignItems: "center",
+            padding: "12px 0",
+            borderBottom: "1px solid var(--border)",
+            marginBottom: 14
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flex: "1 1 220px", minWidth: 200 }}>
+            <Search size={15} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Pesquisar por OP, produto, lote ou responsável..."
+              value={reportSearch}
+              onChange={(e) => setReportSearch(e.target.value)}
+              style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 10, padding: "8px 10px", background: "var(--surface)", color: "var(--text)", fontSize: 13 }}
+            />
+          </div>
+
+          <select value={reportStatus} onChange={(e) => setReportStatus(e.target.value as typeof reportStatus)} style={{ borderRadius: 10, padding: "8px 10px", fontSize: 13 }}>
+            <option value="todas">Todos os status</option>
+            <option value="abertas">Em aberto</option>
+            <option value="concluidas">Concluídas</option>
+            <option value="atrasadas">Atrasadas</option>
+          </select>
+
+          <select value={reportPriority} onChange={(e) => setReportPriority(e.target.value as typeof reportPriority)} style={{ borderRadius: 10, padding: "8px 10px", fontSize: 13 }}>
+            <option value="todas">Todas as prioridades</option>
+            <option value="Alta">Alta</option>
+            <option value="Média">Média</option>
+            <option value="Baixa">Baixa</option>
+          </select>
+
+          <select value={reportResponsible} onChange={(e) => setReportResponsible(e.target.value)} style={{ borderRadius: 10, padding: "8px 10px", fontSize: 13 }}>
+            <option value="todos">Todos os usuários</option>
+            {reportResponsibleOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
+            <span>Período:</span>
+            <input type="date" value={reportFrom} onChange={(e) => setReportFrom(e.target.value)} style={{ borderRadius: 10, padding: "7px 8px", fontSize: 12 }} />
+            <span>até</span>
+            <input type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} style={{ borderRadius: 10, padding: "7px 8px", fontSize: 12 }} />
+          </div>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
+            <input type="checkbox" checked={reportGroup} onChange={(e) => setReportGroup(e.target.checked)} />
+            <SlidersHorizontal size={13} /> Agrupar por etapa
+          </label>
+
+          {reportFiltersActive && (
+            <button className="btn btn-secondary" type="button" onClick={clearReportFilters} style={{ fontSize: 12, padding: "7px 12px" }}>
+              <X size={13} /> Limpar filtros
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)", alignSelf: "center" }}>Atalhos de período:</span>
+          <button className="btn btn-secondary" type="button" onClick={() => applyPreset("semana")} style={{ fontSize: 12, padding: "6px 10px" }}>Esta semana</button>
+          <button className="btn btn-secondary" type="button" onClick={() => applyPreset("semana-passada")} style={{ fontSize: 12, padding: "6px 10px" }}>Semana passada</button>
+          <button className="btn btn-secondary" type="button" onClick={() => applyPreset("30dias")} style={{ fontSize: 12, padding: "6px 10px" }}>Últimos 30 dias</button>
+          <button className="btn btn-secondary" type="button" onClick={() => applyPreset("tudo")} style={{ fontSize: 12, padding: "6px 10px" }}>Tudo</button>
+        </div>
+
+        {reportFiltered.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
+            <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+              <strong style={{ fontSize: 13 }}>OPs por etapa</strong>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                {chartStageData.map((item) => (
+                  <div key={item.stage} style={{ display: "grid", gridTemplateColumns: "90px 1fr 30px", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{item.label}</span>
+                    <div style={{ background: "var(--border)", borderRadius: 6, height: 10, overflow: "hidden" }}>
+                      <div style={{ width: `${(item.count / maxChartStageCount) * 100}%`, height: "100%", background: "var(--accent, #3b82f6)", borderRadius: 6 }} />
+                    </div>
+                    <span style={{ fontSize: 11, textAlign: "right" }}>{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <strong style={{ fontSize: 13, alignSelf: "flex-start" }}>OPs por prioridade</strong>
+              <div style={{ width: 90, height: 90, borderRadius: "50%", background: priorityPieGradient }} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+                {chartPriorityData.map((item) => (
+                  <div key={item.priority} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 9, height: 9, borderRadius: "50%", background: priorityColors[item.priority], display: "inline-block" }} />
+                      {item.priority}
+                    </span>
+                    <span>{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+              <strong style={{ fontSize: 13 }}>OPs concluídas (últimas 8 semanas)</strong>
+              <svg viewBox="0 0 300 100" width="100%" height="100" style={{ marginTop: 8 }}>
+                <polyline points={linePoints} fill="none" stroke="var(--accent, #3b82f6)" strokeWidth="2" />
+                {weeklyCompletionData.map((w, index) => {
+                  const x = (index / (weeklyCompletionData.length - 1)) * 280 + 10;
+                  const y = 90 - (w.count / maxWeeklyCount) * 80;
+                  return <circle key={w.start} cx={x} cy={y} r="2.5" fill="var(--accent, #3b82f6)" />;
+                })}
+              </svg>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text-muted)" }}>
+                <span>{weeklyCompletionData[0]?.label}</span>
+                <span>{weeklyCompletionData[weeklyCompletionData.length - 1]?.label}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="ops-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>OP {sortIcon("code")}</th>
+                <th>Produto {sortIcon("product")}</th>
+                <th>Qtd {sortIcon("quantity")}</th>
+                <th>MP prevista {sortIcon("cost")}</th>
+                <th>Prioridade {sortIcon("priority")}</th>
+                <th>Status atual {sortIcon("stage")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(reportGrouped ? Array.from(reportGrouped.entries()) : [[null, reportSorted] as [null, ProductionOrder[]]]).map(
+                ([stage, group]) => (
+                  <Fragment key={stage ?? "all"}>
+                    {stage && (
+                      <tr>
+                        <td colSpan={6} style={{ background: "var(--surface)", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", padding: "8px 10px" }}>
+                          {stageLabels[stage]} · {group.length} OP(s)
+                        </td>
+                      </tr>
+                    )}
+                    {group.map((order) => (
+                      <tr key={order.id}>
+                        <td><strong>{order.code}</strong>{isOverdue(order) && <span className="badge badge-red" style={{ marginLeft: 6 }}>Atrasada</span>}</td>
+                        <td>{productNameForOrder(order)}</td>
+                        <td>{order.quantity} un</td>
+                        <td>{currency.format(orderCost(order))}</td>
+                        <td>{order.priority}</td>
+                        <td><span className={`badge ${stageClass(order.stage)}`}>{stageLabels[order.stage]}</span></td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                )
+              )}
+            </tbody>
+            {reportFiltered.length > 0 && (
+              <tfoot>
+                <tr style={{ fontWeight: 700, borderTop: "2px solid var(--border)" }}>
+                  <td>Totais ({reportTotals.count})</td>
+                  <td>—</td>
+                  <td>{reportTotals.totalQuantity} un</td>
+                  <td>{currency.format(reportTotals.totalCost)}</td>
+                  <td>—</td>
+                  <td>{reportTotals.avgProgress.toFixed(0)}% méd. progresso</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+
+        {orders.length > 0 && reportFiltered.length === 0 && (
+          <div className="empty-state">Nenhuma OP encontrada com os filtros atuais.</div>
+        )}
+        {orders.length === 0 && <div className="empty-state">Nenhuma OP cadastrada ainda.</div>}
+      </section>
+
+      <section className="card">
+        <div className="section-title">
+          <div>
+            <h3>Produtos: com x sem ficha técnica</h3>
+            <p>Distribuição do portfólio conforme a existência de ficha técnica vinculada.</p>
+          </div>
+          <select value={productChartFilter} onChange={(e) => setProductChartFilter(e.target.value as typeof productChartFilter)} style={{ borderRadius: 10, padding: "7px 10px", fontSize: 12 }}>
+            <option value="todos">Todos os produtos</option>
+            <option value="Ativo">Somente ativos</option>
+            <option value="Em desenvolvimento">Somente em desenvolvimento</option>
+          </select>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 40px", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Com ficha técnica</span>
+            <div style={{ background: "var(--border)", borderRadius: 6, height: 12, overflow: "hidden" }}>
+              <div style={{ width: `${(productsWithSheet / maxProductChart) * 100}%`, height: "100%", background: "#22c55e", borderRadius: 6 }} />
+            </div>
+            <span style={{ fontSize: 12, textAlign: "right" }}>{productsWithSheet}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 40px", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Sem ficha técnica</span>
+            <div style={{ background: "var(--border)", borderRadius: 6, height: 12, overflow: "hidden" }}>
+              <div style={{ width: `${(productsWithoutSheet / maxProductChart) * 100}%`, height: "100%", background: "#ef4444", borderRadius: 6 }} />
+            </div>
+            <span style={{ fontSize: 12, textAlign: "right" }}>{productsWithoutSheet}</span>
+          </div>
+        </div>
+      </section>
 
       <section className="card">
         <div className="section-title">
