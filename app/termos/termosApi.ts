@@ -1,7 +1,9 @@
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "app/lib/supabaseClient";
 
-export async function verificarTermosAceitos(): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser();
+export async function verificarTermosAceitos() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) return false;
 
@@ -11,24 +13,31 @@ export async function verificarTermosAceitos(): Promise<boolean> {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (error) {
-    console.error("Erro ao verificar termos:", error.message);
-    return false;
-  }
+  if (error) throw error;
 
-  return data !== null;
+  return !!data;
 }
 
-export async function aceitarTermos(): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
+export async function aceitarTermos() {
+  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  
 
   if (!user) throw new Error("Usuário não autenticado.");
 
   const { error } = await supabase
     .from("termos_aceitos")
-    .insert({ user_id: user.id });
+    .upsert(
+      {
+        user_id: user.id,
+        aceito_em: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      }
+    );
 
-  if (error) {
-    throw new Error("Não foi possível salvar a aceitação dos termos.");
-  }
+  if (error) throw error;
 }

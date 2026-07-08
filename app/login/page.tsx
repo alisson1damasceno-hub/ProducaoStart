@@ -75,7 +75,7 @@ export default function LoginPage() {
       <div className="card" style={{ width: "100%", maxWidth: 400 }}>
         <div className="section-title">
           <div>
-            <h3 style={{ color: "var(--heading)" }}>ProducaoStart</h3>
+            <h3 style={{ color: "var(--heading)" }}>Producao Start</h3>
             <p>
               {modo === "entrar" && "Entre para acessar o sistema."}
               {modo === "esqueceu" && "Informe seu e-mail para recuperar o acesso."}
