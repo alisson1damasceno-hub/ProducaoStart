@@ -5,6 +5,8 @@ import { BarChart3, ClipboardList, Factory, KanbanSquare, ListChecks, Package } 
 import { useMvpData } from "./store";
 import { supabase } from "../lib/supabaseClient";
 import { ThemeToggle } from "./ThemeToggle";
+import { usePapel } from "../login/usePapel";
+import { Users } from "lucide-react";
 
 const nav = [
   { href: "/", key: "dashboard", label: "Dashboard", icon: BarChart3 },
@@ -17,6 +19,7 @@ const nav = [
 
 export function Shell({ active, children }: { active: string; children: React.ReactNode }) {
   const { backendReady, lastError } = useMvpData();
+  const { podeGerenciar } = usePapel();
 
   return (
     <div className="container">
@@ -38,6 +41,11 @@ export function Shell({ active, children }: { active: string; children: React.Re
               </Link>
             );
           })}
+        {podeGerenciar && (
+            <Link className={active === "gerenciar" ? "active" : ""} href="/gerenciar-usuarios">
+              <Users size={16} /> Usuários
+            </Link>
+          )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <ThemeToggle />
