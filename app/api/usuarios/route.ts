@@ -57,3 +57,40 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ erro: msg }, { status: 500 });
   }
 }
+
+// POST /api/usuarios — cria novo usuário
+export async function POST(request: Request) {
+  try {
+    const { nome, email, senha } = await request.json() as {
+      nome: string;
+      email: string;
+      senha: string;
+    };
+
+    if (!nome || !email || !senha) {
+      return NextResponse.json(
+        { erro: "nome, email e senha são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    const admin = criarClienteAdmin();
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password: senha,
+      user_metadata: { nome, papel: "operario" },
+      email_confirm: true,
+    });
+    if (error) throw error;
+
+    return NextResponse.json({
+      id: data.user.id,
+      email: data.user.email ?? "",
+      nome,
+      papel: "operario" as Papel,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Erro desconhecido";
+    return NextResponse.json({ erro: msg }, { status: 500 });
+  }
+}
