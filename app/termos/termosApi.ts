@@ -1,4 +1,4 @@
-import { supabase } from "app/lib/supabaseClient";
+import { supabase } from "../../lib/supabase";
 
 export async function verificarTermosAceitos() {
   const {

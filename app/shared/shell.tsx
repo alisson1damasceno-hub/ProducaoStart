@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BarChart3, ClipboardList, Factory, KanbanSquare, ListChecks, Package } from "lucide-react";
 import { useMvpData } from "./store";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabase";
 import { ThemeToggle } from "./ThemeToggle";
 import { usePapel } from "../login/usePapel";
 import { Users } from "lucide-react";

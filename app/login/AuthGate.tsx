@@ -9,6 +9,7 @@ import type { Sessao } from "./types";
 import Link from "next/link";
 import { AvatarPreview } from "./AvatarPreview";
 import type { Papel } from "./types";
+import { verificarTermosAceitos } from "../termos/termosApi";
 
 function Carregando() {
   return (
@@ -29,7 +30,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [verificando, setVerificando] = useState(true);
   const [sessao, setSessao] = useState<Sessao | null>(null);
+  const [termosAceitos, setTermosAceitos] = useState<boolean | null>(null);
   const ehLogin = pathname === "/login";
+  const ehTermos = pathname === "/termos";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -86,14 +89,47 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!verificando && !sessao && !ehLogin) {
-      router.replace("/login");
+    if (!sessao) {
+      setTermosAceitos(null);
+      return;
     }
-  }, [verificando, sessao, ehLogin, router]);
+    let ativo = true;
+    verificarTermosAceitos()
+      .then((aceitos) => {
+        if (ativo) setTermosAceitos(aceitos);
+      })
+      .catch(() => {
+        if (ativo) setTermosAceitos(false);
+      });
+    return () => {
+      ativo = false;
+    };
+    // Reexecuta a cada troca de rota para refletir o aceite assim que ele acontecer,
+    // sem exigir um novo login nem pedir aceite duas vezes.
+  }, [sessao, pathname]);
+
+  useEffect(() => {
+    if (verificando) return;
+    if (!sessao) {
+      if (!ehLogin) router.replace("/login");
+      return;
+    }
+    if (termosAceitos === false && !ehTermos) {
+      router.replace("/termos");
+    }
+  }, [verificando, sessao, termosAceitos, ehTermos, ehLogin, router]);
 
   if (ehLogin) return <>{children}</>;
   if (verificando) return <Carregando />;
   if (!sessao) return <Carregando />;
+  if (termosAceitos === null) return <Carregando />;
+  if (termosAceitos === false) {
+    // Ainda não aceitou: na própria tela de termos, libera sem a barra superior
+    // (evita o atalho de "Editar perfil" escapando da tela de aceite).
+    // Em qualquer outra rota, o efeito acima já está redirecionando para /termos.
+    if (ehTermos) return <>{children}</>;
+    return <Carregando />;
+  }
 
   return (
     <>
