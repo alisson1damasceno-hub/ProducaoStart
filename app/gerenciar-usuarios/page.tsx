@@ -5,6 +5,7 @@ import { Shell } from "../shared/shell";
 import { usePapel } from "../login/usePapel";
 import type { Papel } from "../login/types";
 import { PlusCircle, X } from "lucide-react";
+import { createBrowserClient } from "@supabase/ssr";
 
 type Usuario = {
   id: string;
@@ -27,6 +28,17 @@ export default function GerenciarUsuariosPage() {
   const [novaSenha, setNovaSenha] = useState("");
   const [criando, setCriando] = useState(false);
   const [erroCriacao, setErroCriacao] = useState<string | null>(null);
+  const [emailUsuarioLogado, setEmailUsuarioLogado] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabaseBrowser = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    supabaseBrowser.auth.getSession().then(({ data }) => {
+      setEmailUsuarioLogado(data.session?.user.email ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     async function carregar() {
@@ -185,7 +197,7 @@ export default function GerenciarUsuariosPage() {
                   <td>
                     <select
                       value={u.papel}
-                      disabled={salvando === u.id}
+                      disabled={salvando === u.id || u.email === emailUsuarioLogado}
                       onChange={(e) => alterarPapel(u.id, e.target.value as Papel)}
                       style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #e4e4e7" }}
                     >
